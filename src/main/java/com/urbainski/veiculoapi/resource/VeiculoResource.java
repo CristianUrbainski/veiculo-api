@@ -1,5 +1,7 @@
 package com.urbainski.veiculoapi.resource;
 
+import java.util.List;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.urbainski.veiculoapi.annotation.ApiPageable;
+import com.urbainski.veiculoapi.dto.CalcularPrevisaoGastosViagemDTO;
+import com.urbainski.veiculoapi.dto.RankVeiculoDTO;
 import com.urbainski.veiculoapi.model.Veiculo;
 import com.urbainski.veiculoapi.service.VeiculoService;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
@@ -41,61 +47,67 @@ public class VeiculoResource {
 
 	@Autowired
 	private VeiculoService veiculoService;
-	
+
+	@GetMapping(path = "/calcular-previsao-gastos")
+	@ApiOperation(value = "calcular a previsão de gastos de cada veículo para um viagem seguindos os parâmetros recebidos")
+	@ApiImplicitParams({
+			@ApiImplicitParam(name = "precoLitroCombustivel", dataType = "double", paramType = "query", defaultValue = "0", example = "4", required = true, value = "Preço do combustível para ser usado no cálculo de previsão de gastos."),
+			@ApiImplicitParam(name = "totalKmCidade", dataType = "double", paramType = "query", defaultValue = "0", example = "50", required = true, value = "Total de KM que serão percorridos dentro de cidades na viagem."),
+			@ApiImplicitParam(name = "totalKmRodovia", dataType = "double", paramType = "query", defaultValue = "0", example = "50", required = true, value = "Total de KM que serão percorridos em rodovias na viagem."), })
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "retorna uma lista ranqueada do veículo com menor gasto para o maior") })
+	public ResponseEntity<List<RankVeiculoDTO>> calcularPrevisaoGastos(@ApiIgnore CalcularPrevisaoGastosViagemDTO dto) {
+		return ResponseEntity.ok(veiculoService.calcularPrevisaoGastos(dto));
+	}
+
 	@GetMapping
 	@ApiPageable
 	@ApiOperation(value = "pesquisar todas os veículos com paginação")
 	@ApiResponses(value = {
-		@ApiResponse(code = 200, message = "retorna os dados pesquisados do veículo paginados conforme solicitado")
-	})
+			@ApiResponse(code = 200, message = "retorna os dados pesquisados do veículo paginados conforme solicitado") })
 	public Page<Veiculo> findAll(@ApiIgnore Pageable pageable) {
 		return veiculoService.findAll(pageable);
 	}
 
 	@GetMapping("/{id}")
 	@ApiOperation(value = "pesquisar um veículo pelo seu identificador")
-	@ApiResponses(value = {
-		@ApiResponse(code = 200, message = "retorna os dados do veículo"),
-		@ApiResponse(code = 404, message = "caso não seja encontrada um veículo pelo identificador fornecido")
-	})
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "retorna os dados do veículo"),
+			@ApiResponse(code = 404, message = "caso não seja encontrada um veículo pelo identificador fornecido") })
 	public ResponseEntity<Veiculo> findOne(
-			@ApiParam(name = "id", example =  "1",  value = "identificador do veículo") @PathVariable Long id) {
+			@ApiParam(name = "id", example = "1", value = "identificador do veículo") @PathVariable Long id) {
 		Veiculo veiculo = veiculoService.findOne(id);
 		if (veiculo == null) {
 			return ResponseEntity.notFound().build();
 		}
 		return ResponseEntity.ok(veiculo);
 	}
-	
+
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@ApiOperation(value = "salvar um novo veículo")
-	@ApiResponses(value = { 
-			@ApiResponse(code = 201, message = "caso o veículo seja gravado"),
+	@ApiResponses(value = { @ApiResponse(code = 201, message = "caso o veículo seja gravado"),
 			@ApiResponse(code = 400, message = "caso seja passado algum valor inválido no parâmetro") })
 	public ResponseEntity<Veiculo> save(
 			@ApiParam(name = "veiculo", value = "dados a serem salvos") @Valid @RequestBody Veiculo veiculo) {
 		Veiculo veiculoSaved = veiculoService.save(veiculo);
 		return ResponseEntity.status(HttpStatus.CREATED).body(veiculoSaved);
 	}
-	
+
 	@PutMapping("/{id}")
 	@ApiOperation(value = "atualizar um veículo pelo seu identificador")
-	@ApiResponses(value = { 
-			@ApiResponse(code = 200, message = "caso o veículo seja atualizado"),
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "caso o veículo seja atualizado"),
 			@ApiResponse(code = 400, message = "caso seja passado algum valor inválido no parâmetro") })
 	public ResponseEntity<Veiculo> update(
-			@ApiParam(name = "id", example = "1", value = "identificador do veículo") @PathVariable Long id, 
+			@ApiParam(name = "id", example = "1", value = "identificador do veículo") @PathVariable Long id,
 			@ApiParam(name = "veiculo", value = "dados a serem salvos") @Valid @RequestBody Veiculo veiculo) {
 		Veiculo veiculoSaved = veiculoService.update(id, veiculo);
 		return ResponseEntity.ok(veiculoSaved);
 	}
-	
+
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@ApiOperation(value = "remover um veículo pelo seu identificador")
-	@ApiResponses(value = {
-			@ApiResponse(code = 204, message = "caso o veículo seja excluído com sucesso"),
+	@ApiResponses(value = { @ApiResponse(code = 204, message = "caso o veículo seja excluído com sucesso"),
 			@ApiResponse(code = 404, message = "caso não seja encontrada um veículo com o identificador fornecido") })
 	public void delete(
 			@ApiParam(name = "id", example = "1", value = "identificador do veículo") @PathVariable Long id) {
