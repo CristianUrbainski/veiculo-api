@@ -64,8 +64,8 @@ public class VeiculoService {
 
 	public List<RankVeiculoDTO> calcularPrevisaoGastos(CalcularPrevisaoGastosViagemDTO dto) {
 
-		final List<RankVeiculoDTO> listaRetorno = new ArrayList<RankVeiculoDTO>();
 		List<Veiculo> listaVeiculo = repo.findAll();
+		final List<RankVeiculoDTO> listaRetorno = new ArrayList<RankVeiculoDTO>(listaVeiculo.size());
 
 		BigDecimal precoLitroCombustivel = BigDecimal.valueOf(dto.getPrecoLitroCombustivel());
 		BigDecimal totalKmCidade = BigDecimal.valueOf(dto.getTotalKmCidade());
